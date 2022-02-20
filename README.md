@@ -1,163 +1,99 @@
-# Home Assistant Raspberry Pi GPIO custom integration
+# Home Assistant Raspberry Pi GPIO PWM custom integration
 
-**This is a spin-off from the original Home Assistant integration which was marked as deprecated and will be removed in Home Assistant Core 2022.6.**
+**This is a spin-off from the original Home Assistant integration which was marked as deprecated and will be removed in Home Assistant Core 2022.4.**
 
-The `rpi_gpio` integration supports the following platforms: `Binary Sensor`, `Cover`, `Switch`
+The rpi_gpio_pwm platform allows to control multiple lights using pulse-width modulation, for example LED strips. It supports one-color, RGB and RGBW LEDs driven by GPIOs of a Raspberry Pi (same host or remote) or a PCA9685 controller.
+
+For controlling the GPIOs, the platform connects to the pigpio-daemon (http://abyz.me.uk/rpi/pigpio/pigpiod.html), which must be running. On Raspbian Jessie 2016-05-10 or newer the pigpio library is already included. On other operating systems it needs to be installed first (see installation instructions: https://github.com/soldag/python-pwmled#installation).
 
 # Installation
 
 ### HACS
 
-The recommend way to install `rpi_gpio` is through [HACS](https://hacs.xyz/).
+The recommend way to install `ha-rpi_gpio_pwm` is through [HACS](https://hacs.xyz/).
 
 ### Manual installation
 
-Copy the `rpi_gpio` folder and all of its contents into your Home Assistant's `custom_components` folder. This folder is usually inside your `/config` folder. If you are running Hass.io, use SAMBA to copy the folder over. You may need to create the `custom_components` folder and then copy the `rpi_gpio` folder and all of its contents into it.
+Copy the `ha-rpi_gpio_pwm` folder and all of its contents into your Home Assistant's `custom_components` folder. This folder is usually inside your `/config` folder. If you are running Hass.io, use SAMBA to copy the folder over. You may need to create the `custom_components` folder and then copy the `rpi_gpio` folder and all of its contents into it.
 
-# Usage
-
-## Binary Sensor
-
-The `rpi_gpio` binary sensor platform allows you to read sensor values of the GPIOs of your [Raspberry Pi](https://www.raspberrypi.org/).
-
-### Configuration
-
-To use your Raspberry Pi's GPIO in your installation, add the following to your `configuration.yaml` file:
+# Configuration
+To enable this platform, add the following lines to your configuration.yaml:
 
 ```yaml
-# Basic configuration.yaml entry
-binary_sensor:
-  - platform: rpi_gpio
-    ports:
-      11: PIR Office
-      12: PIR Bedroom
+# Example configuration.yaml entry
+light:
+  - platform: rpi_gpio_pwm
+    leds:
+      - name: Lightstrip Cupboard
+        driver: gpio
+        pins: [17]
+        type: simple
+```
+# CONFIGURATION VARIABLES
+leds list REQUIRED
+Can contain multiple LEDs.
+
+name string REQUIRED
+The name of the LED.
+
+driver string REQUIRED
+The driver which controls the LED. Choose either gpio or pca9685.
+
+pins list | integer REQUIRED
+The pins connected to the LED as a list. The order of pins is determined by the specified type.
+
+type string REQUIRED
+The type of LED. Choose either rgb, rgbw or simple.
+
+frequency integer (optional, default: 200)
+The PWM frequency.
+
+address string (optional, default: 64)
+The address of the PCA9685 driver.
+
+host string (optional)
+The remote host address for the GPIO driver.
+
+# Examples
+In this section you find some real-life examples of how to use this sensor.
+
+RGB LED CONNECTED TO PCA9685 CONTROLLER
+This example uses a PCA9685 controller (https://www.nxp.com/products/interfaces/ic-bus-portfolio/ic-led-display-control/16-channel-12-bit-pwm-fm-plus-ic-bus-led-controller:PCA9685) to control a RGB LED.
+
+```yaml
+# Example configuration.yaml entry
+light:
+  - platform: rpi_gpio_pwm
+    leds:
+      - name: TV Backlight
+        driver: pca9685
+        pins: [0, 1, 2] # [R, G, B]
+        type: rgb
 ```
 
+RGBW LED CONNECTED TO PCA9685 CONTROLLER
+This example uses a PCA9685 controller (https://www.nxp.com/products/interfaces/ic-bus-portfolio/ic-led-display-control/16-channel-12-bit-pwm-fm-plus-ic-bus-led-controller:PCA9685) to interact with a RGBW LED.
+
 ```yaml
-# Full configuration.yaml entry
-binary_sensor:
-  - platform: rpi_gpio
-    bouncetime: 80
-    invert_logic: true
-    pull_mode: "DOWN"
-    ports:
-      11: PIR Office
-      12: PIR Bedroom
+# Example configuration.yaml entry
+light:
+  - platform: rpi_gpio_pwm
+    leds:
+      - name: Lightstrip Desk
+        driver: pca9685
+        pins: [3, 4, 5, 6] # [R, G, B, W]
+        type: rgbw
 ```
 
-### Options
-
-| Key            | Required | Default               | Type    | Description                                                                |
-| -------------- | -------- | --------------------- | --------|------------------------------------------------------------------ |
-| `bouncetime`   | no       | `50`                  | integer | The time in milliseconds for port debouncing                                                |
-| `invert_logic` | no       | `false` (ACTIVE HIGH) | boolean | If `true`, inverts the output logic to ACTIVE LOW                                           |
-| `pull_mode`    | no       | `UP`                  | string  | Type of internal pull resistor to use: `UP` - pull-up resistor, `DOWN` - pull-down resistor |
-| `ports`        | yes      |                       | list    | List of used ports ([BCM mode pin numbers](https://pinout.xyz/resources/raspberry-pi-pinout.png)) and corresponding names |
-
-For more details about the GPIO layout, visit the Wikipedia [article](https://en.wikipedia.org/wiki/Raspberry_Pi#GPIO_connector) about the Raspberry Pi.
-
-## Cover
-
-The `rpi_gpio` cover platform allows you to use a Raspberry Pi to control your cover such as Garage doors.
-
-It uses two pins on the Raspberry Pi.
-
-- The `state_pin` will detect if the cover is closed, and
-- the `relay_pin` will trigger the cover to open or close.
-
-Although you do not need Andrews Hilliday's software controller when you run Home Assistant, he has written clear instructions on how to hook your garage door and sensors up to your Raspberry Pi, which can be found [here](https://github.com/andrewshilliday/garage-door-controller#hardware-setup).
-
-### Configuration
-
-To enable Raspberry Pi Covers in your installation, add the following to your `configuration.yaml` file:
+RGB LED CONNECTED TO THE GPIO PINS OF A REMOTE RASPBERRY PI.
+On the Raspberry Pi the pigpio daemon is running on the default port 6666.
 
 ```yaml
-# Basic configuration.yaml entry
-cover:
-  - platform: rpi_gpio
-    covers:
-      - relay_pin: 10
-        state_pin: 11
-```
-
-```yaml
-# Full configuration.yaml entry
-cover:
-  - platform: rpi_gpio
-    relay_time: 0.2
-    invert_relay: false
-    state_pull_mode: "UP"
-    invert_state: true
-    covers:
-      - relay_pin: 10
-        state_pin: 11
-      - relay_pin: 12
-        state_pin: 13
-        name: "Right door"
-```
-
-### Options
-
-| Key               | Required | Default | Type    | Description                                                      |
-| ----------------- | -------- | ------- | ------- | ---------------------------------------------------------------- |
-| `relay_time`      | no       | `0.2`   | float   | The time that the relay will be on for in seconds                |
-| `invert_relay`    | no       | `false` | boolean | Invert the relay pin output so that it is active-high (True)     |
-| `state_pull_mode` | no       | `UP`    | string  | The direction the State pin is pulling. It can be `UP` or `DOWN` |
-| `invert_state`    | no       | `false` | boolean | Invert the value of the State pin so that 0 means closed         |
-| `covers`          | yes      |         | list    | List of covers                                                   |
-| `relay_pin`       | yes      |         | integer | The pin of your Raspberry Pi where the relay is connected        |
-| `state_pin`       | yes      |         | integer | The pin of your Raspberry Pi to retrieve the state               |
-| `name`            | no       |         | string  | The name for the cover entity                                    |
-
-### Remote Raspberry Pi Cover
-
-If you don't have Home Assistant running on your Raspberry Pi and you want to use it as a remote cover instead, there is a project called [GarageQTPi](https://github.com/Jerrkawz/GarageQTPi) that will work remotely with the [MQTT Cover Component](/integrations/cover.mqtt/). Follow the GitHub instructions to install and configure GarageQTPi and once configured follow the Home Assistant instructions to configure the MQTT Cover.
-
-## Switch
-
-The `rpi_gpio` switch platform allows you to control the GPIOs of your [Raspberry Pi](https://www.raspberrypi.org/).
-
-### Configuration
-
-To use your Raspberry Pi's GPIO in your installation, add the following to your `configuration.yaml` file:
-
-```yaml
-# Basic configuration.yaml entry
-switch:
-  - platform: rpi_gpio
-    ports:
-      11: Fan Office
-      12: Light Desk
-```
-
-```yaml
-# Full configuration.yaml entry
-switch:
-  - platform: rpi_gpio
-    invert_logic: true
-    ports:
-      11: Fan Office
-      12: Light Desk
-```
-
-### Options
-
-| Key            | Required | Default | Type            | Description                                         |
-| -------------- | -------- | ------- | --------------- | --------------------------------------------------- |
-| `invert_logic` | no       | `false` | boolean         | If true, inverts the output logic to ACTIVE LOW     |
-| `ports`        | yes      |                       | list    | List of used ports ([BCM mode pin numbers](https://pinout.xyz/resources/raspberry-pi-pinout.png)) and corresponding names |
-
-For more details about the GPIO layout, visit the Wikipedia [article](https://en.wikipedia.org/wiki/Raspberry_Pi#General_purpose_input-output_(GPIO)_connector) about the Raspberry Pi.
-
-**Note that a pin managed by Home Assistant is expected to be exclusive to Home Assistant.**
-
-A common question is what does Port refer to, this number is the actual GPIO #, not the pin #.
-For example, if you have a relay connected to pin 11 its GPIO # is 17.
-
-```yaml
-# Basic configuration.yaml entry
-switch:
-  - platform: rpi_gpio
-    ports:
-      17: Speaker Relay
+# Example configuration.yaml entry
+light:
+  - platform: rpi_gpio_pwm
+    leds:
+      - name: Lightstrip Sideboard
+        driver: gpio
+        host: 192.168.0.66
 ```
