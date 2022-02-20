@@ -1,6 +1,6 @@
 {
   "name": "Raspberry Pi GPIO PWM",
-  "domains": ["lights"],
+  "domains": ["light"],
   "iot_class": "Local Push",
-  "homeassistant": "2022.2.9"
+  "homeassistant": "2022.2.10"
 }
