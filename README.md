@@ -6,6 +6,8 @@ The rpi_gpio_pwm platform allows to control multiple lights using pulse-width mo
 
 For controlling the GPIOs, the platform connects to the pigpio-daemon (http://abyz.me.uk/rpi/pigpio/pigpiod.html), which must be running. On Raspbian Jessie 2016-05-10 or newer the pigpio library is already included. On other operating systems it needs to be installed first (see installation instructions: https://github.com/soldag/python-pwmled#installation).
 
+For Home Assistant this daemon can be installed as an add-on (https://github.com/Poeschl/Hassio-Addons/tree/master/pigpio).
+
 # Installation
 
 ### HACS
