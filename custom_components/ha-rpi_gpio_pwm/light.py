@@ -21,7 +21,7 @@ from homeassistant.components.light import (
     SUPPORT_TRANSITION,
     LightEntity,
 )
-from homeassistant.const import CONF_ADDRESS, CONF_HOST, CONF_NAME, CONF_TYPE, STATE_ON
+from homeassistant.const import CONF_ADDRESS, CONF_HOST, CONF_PORT, CONF_NAME, CONF_TYPE, STATE_ON
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -48,6 +48,9 @@ CONF_LED_TYPES = [CONF_LED_TYPE_SIMPLE, CONF_LED_TYPE_RGB, CONF_LED_TYPE_RGBW]
 DEFAULT_BRIGHTNESS = 255
 DEFAULT_COLOR = [0, 0]
 
+DEFAULT_HOST = "localhost"
+DEFAULT_PORT = 8888
+
 SUPPORT_SIMPLE_LED = SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
 SUPPORT_RGB_LED = SUPPORT_BRIGHTNESS | SUPPORT_COLOR | SUPPORT_TRANSITION
 
@@ -63,7 +66,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                     vol.Required(CONF_TYPE): vol.In(CONF_LED_TYPES),
                     vol.Optional(CONF_FREQUENCY): cv.positive_int,
                     vol.Optional(CONF_ADDRESS): cv.byte,
-                    vol.Optional(CONF_HOST): cv.string,
+                    vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
+                    vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
                 }
             ],
         )
@@ -88,6 +92,8 @@ def setup_platform(
         if driver_type == CONF_DRIVER_GPIO:
             if CONF_HOST in led_conf:
                 opt_args["host"] = led_conf[CONF_HOST]
+            if CONF_PORT in led_conf:
+                opt_args["port"] = led_conf[CONF_PORT]
             driver = GpioDriver(pins, **opt_args)
         elif driver_type == CONF_DRIVER_PCA9685:
             if CONF_ADDRESS in led_conf:
