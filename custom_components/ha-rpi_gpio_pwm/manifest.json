@@ -2,9 +2,9 @@
   "domain": "rpi_gpio_pwm",
   "name": "Raspberry Pi GPIO PWM",
   "documentation": "https://www.home-assistant.io/integrations/rpi_gpio_pwm",
-  "requirements": ["pwmled==1.6.9"],
+  "requirements": ["pwmled==1.6.9","RPi.GPIO==0.7.1a4"],
   "codeowners": ["@soldag"],
   "iot_class": "local_push",
   "loggers": ["adafruit_blinka", "adafruit_circuitpython_pca9685", "pwmled"],
-  "version": "2022.3.1"
+  "version": "2022.6.0"
 }
