@@ -68,7 +68,7 @@ def setup_platform(
         if CONF_FREQUENCY in led_conf:
             opt_args["frequency"] = led_conf[CONF_FREQUENCY]
         opt_args["pin_factory"] = PiGPIOFactory(host=led_conf[CONF_HOST], port= led_conf[CONF_PORT])
-        led = PwmSimpleLed(PWMLED(pin, **opt_args), name)
+        led = PwmSimpleLed(PWMLED(pin, **opt_args), led_conf[CONF_NAME])
         leds.append(led)
 
     add_entities(leds)
