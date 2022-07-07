@@ -25,6 +25,7 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 _LOGGER = logging.getLogger(__name__)
 
+CONF_LEDS = "leds"
 CONF_PIN = "pin"
 CONF_FREQUENCY = "frequency"
 
