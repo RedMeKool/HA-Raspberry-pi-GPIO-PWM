@@ -3,56 +3,38 @@ from __future__ import annotations
 
 import logging
 
-from pwmled import Color
-from pwmled.driver.gpio import GpioDriver
-from pwmled.driver.pca9685 import Pca9685Driver
-from pwmled.led import SimpleLed
-from pwmled.led.rgb import RgbLed
-from pwmled.led.rgbw import RgbwLed
+from gpiozero import PWMLED
+from gpiozero.pins.pigpio import PiGPIOFactory
+
 import voluptuous as vol
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_HS_COLOR,
     ATTR_TRANSITION,
     PLATFORM_SCHEMA,
     SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
     SUPPORT_TRANSITION,
     LightEntity,
 )
-from homeassistant.const import CONF_ADDRESS, CONF_HOST, CONF_PORT, CONF_NAME, CONF_TYPE, STATE_ON
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-import homeassistant.util.color as color_util
 
 _LOGGER = logging.getLogger(__name__)
 
 CONF_LEDS = "leds"
-CONF_DRIVER = "driver"
-CONF_PINS = "pins"
+CONF_PIN = "pin"
 CONF_FREQUENCY = "frequency"
 
-CONF_DRIVER_GPIO = "gpio"
-CONF_DRIVER_PCA9685 = "pca9685"
-CONF_DRIVER_TYPES = [CONF_DRIVER_GPIO, CONF_DRIVER_PCA9685]
-
-CONF_LED_TYPE_SIMPLE = "simple"
-CONF_LED_TYPE_RGB = "rgb"
-CONF_LED_TYPE_RGBW = "rgbw"
-CONF_LED_TYPES = [CONF_LED_TYPE_SIMPLE, CONF_LED_TYPE_RGB, CONF_LED_TYPE_RGBW]
-
 DEFAULT_BRIGHTNESS = 255
-DEFAULT_COLOR = [0, 0]
 
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 8888
 
 SUPPORT_SIMPLE_LED = SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
-SUPPORT_RGB_LED = SUPPORT_BRIGHTNESS | SUPPORT_COLOR | SUPPORT_TRANSITION
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -61,11 +43,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
             [
                 {
                     vol.Required(CONF_NAME): cv.string,
-                    vol.Required(CONF_DRIVER): vol.In(CONF_DRIVER_TYPES),
-                    vol.Required(CONF_PINS): vol.All(cv.ensure_list, [cv.positive_int]),
-                    vol.Required(CONF_TYPE): vol.In(CONF_LED_TYPES),
+                    vol.Required(CONF_PIN): cv.positive_int,
                     vol.Optional(CONF_FREQUENCY): cv.positive_int,
-                    vol.Optional(CONF_ADDRESS): cv.byte,
                     vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
                 }
@@ -84,36 +63,12 @@ def setup_platform(
     """Set up the PWM LED lights."""
     leds = []
     for led_conf in config[CONF_LEDS]:
-        driver_type = led_conf[CONF_DRIVER]
-        pins = led_conf[CONF_PINS]
+        pin = led_conf[CONF_PIN]
         opt_args = {}
         if CONF_FREQUENCY in led_conf:
-            opt_args["freq"] = led_conf[CONF_FREQUENCY]
-        if driver_type == CONF_DRIVER_GPIO:
-            if CONF_HOST in led_conf:
-                opt_args["host"] = led_conf[CONF_HOST]
-            if CONF_PORT in led_conf:
-                opt_args["port"] = led_conf[CONF_PORT]
-            driver = GpioDriver(pins, **opt_args)
-        elif driver_type == CONF_DRIVER_PCA9685:
-            if CONF_ADDRESS in led_conf:
-                opt_args["address"] = led_conf[CONF_ADDRESS]
-            driver = Pca9685Driver(pins, **opt_args)
-        else:
-            _LOGGER.error("Invalid driver type")
-            return
-
-        name = led_conf[CONF_NAME]
-        led_type = led_conf[CONF_TYPE]
-        if led_type == CONF_LED_TYPE_SIMPLE:
-            led = PwmSimpleLed(SimpleLed(driver), name)
-        elif led_type == CONF_LED_TYPE_RGB:
-            led = PwmRgbLed(RgbLed(driver), name)
-        elif led_type == CONF_LED_TYPE_RGBW:
-            led = PwmRgbLed(RgbwLed(driver), name)
-        else:
-            _LOGGER.error("Invalid led type")
-            return
+            opt_args["frequency"] = led_conf[CONF_FREQUENCY]
+        opt_args["pin_factory"] = PiGPIOFactory(host=led_conf[CONF_HOST], port= led_conf[CONF_PORT])
+        led = PwmSimpleLed(PWMLED(pin, **opt_args), led_conf[CONF_NAME])
         leds.append(led)
 
     add_entities(leds)
@@ -167,92 +122,17 @@ class PwmSimpleLed(LightEntity, RestoreEntity):
         """Turn on a led."""
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs[ATTR_BRIGHTNESS]
-
-        if ATTR_TRANSITION in kwargs:
-            transition_time = kwargs[ATTR_TRANSITION]
-            self._led.transition(
-                transition_time,
-                is_on=True,
-                brightness=_from_hass_brightness(self._brightness),
-            )
-        else:
-            self._led.set(
-                is_on=True, brightness=_from_hass_brightness(self._brightness)
-            )
-
+        self._led.value = _from_hass_brightness(self._brightness)
         self._is_on = True
         self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs):
         """Turn off a LED."""
         if self.is_on:
-            if ATTR_TRANSITION in kwargs:
-                transition_time = kwargs[ATTR_TRANSITION]
-                self._led.transition(transition_time, is_on=False)
-            else:
-                self._led.off()
-
+            self._led.off()
         self._is_on = False
         self.schedule_update_ha_state()
-
-
-class PwmRgbLed(PwmSimpleLed):
-    """Representation of a RGB(W) PWM LED."""
-
-    def __init__(self, led, name):
-        """Initialize a RGB(W) PWM LED."""
-        super().__init__(led, name)
-        self._color = DEFAULT_COLOR
-
-    async def async_added_to_hass(self):
-        """Handle entity about to be added to hass event."""
-        await super().async_added_to_hass()
-        if last_state := await self.async_get_last_state():
-            self._color = last_state.attributes.get("hs_color", DEFAULT_COLOR)
-
-    @property
-    def hs_color(self):
-        """Return the color property."""
-        return self._color
-
-    @property
-    def supported_features(self):
-        """Flag supported features."""
-        return SUPPORT_RGB_LED
-
-    def turn_on(self, **kwargs):
-        """Turn on a LED."""
-        if ATTR_HS_COLOR in kwargs:
-            self._color = kwargs[ATTR_HS_COLOR]
-        if ATTR_BRIGHTNESS in kwargs:
-            self._brightness = kwargs[ATTR_BRIGHTNESS]
-
-        if ATTR_TRANSITION in kwargs:
-            transition_time = kwargs[ATTR_TRANSITION]
-            self._led.transition(
-                transition_time,
-                is_on=True,
-                brightness=_from_hass_brightness(self._brightness),
-                color=_from_hass_color(self._color),
-            )
-        else:
-            self._led.set(
-                is_on=True,
-                brightness=_from_hass_brightness(self._brightness),
-                color=_from_hass_color(self._color),
-            )
-
-        self._is_on = True
-        self.schedule_update_ha_state()
-
 
 def _from_hass_brightness(brightness):
     """Convert Home Assistant brightness units to percentage."""
     return brightness / 255
-
-
-def _from_hass_color(color):
-    """Convert Home Assistant RGB list to Color tuple."""
-
-    rgb = color_util.color_hs_to_RGB(*color)
-    return Color(*tuple(rgb))
