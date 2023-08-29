@@ -5,64 +5,7 @@ default_config:
 logger:
   default: info
   logs:
-    custom_components.slow_pwm: debug
+    custom_components.rpi_gpio_pwm: debug
 
-switch:
-  - platform: template
-    switches:
-      dummy_1:
-        turn_on:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 1 On
-        turn_off:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 1 Off
-      dummy_2:
-        turn_on:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 2 On
-        turn_off:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 2 Off
-      dummy_3:
-        turn_on:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 3 On
-        turn_off:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 3 Off
-      dummy_4:
-        turn_on:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 4 On
-        turn_off:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 4 Off
-      dummy_5:
-        turn_on:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 5 On
-        turn_off:
-          - service: logbook.log
-            data:
-              name: DebugOutput
-              message: Dummy Switch 5 Off
+
 
