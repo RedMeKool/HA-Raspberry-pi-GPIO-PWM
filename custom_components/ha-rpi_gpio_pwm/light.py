@@ -106,7 +106,7 @@ class PwmSimpleLed(LightEntity, RestoreEntity):
         """Return the name of the group."""
         return self._name
 
-    @@property
+    @property
     def unique_id(self):
         return self._unique_id
 
