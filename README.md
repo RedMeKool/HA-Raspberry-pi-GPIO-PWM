@@ -33,6 +33,8 @@ light:
 
 - **name** string *(REQUIRED)*: The name of the LED.
 
+- **unique_id** string *(optional, default: none)*: An ID that uniquely identifies this LED. Set this to a unique value to allow customization through the UI.
+
 - **pin** integer *(REQUIRED)*: The pin connected to the LED as a list.
 
 - **frequency** integer *(optional, default: 100)*: The PWM frequency.
