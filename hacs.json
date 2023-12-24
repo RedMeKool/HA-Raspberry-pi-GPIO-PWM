@@ -1,6 +1,8 @@
 {
   "name": "Raspberry Pi GPIO PWM",
-  "domains": ["light"],
-  "iot_class": "Local Push",
-  "homeassistant": "2022.8.5"
+  "filename": "rpi_gpio_pwm.zip",
+  "hide_default_branch": true,
+  "homeassistant": "2023.3.0",
+  "render_readme": true,
+  "zip_release": true
 }
