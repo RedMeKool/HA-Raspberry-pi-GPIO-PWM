@@ -26,6 +26,7 @@ light:
   - platform: rpi_gpio_pwm
     leds:
       - name: Lightstrip Cupboard
+        unique_id: thisismyuniqueid
         pin: 17
 ```
 # CONFIGURATION VARIABLES
@@ -33,7 +34,7 @@ light:
 
 - **name** string *(REQUIRED)*: The name of the LED.
 
-- **unique_id** string *(optional, default: none)*: An ID that uniquely identifies this LED. Set this to a unique value to allow customization through the UI.
+- **unique_id** string *(REQUIRED)*: An ID that uniquely identifies this LED. Set this to a unique value to allow customization through the UI.
 
 - **pin** integer *(REQUIRED)*: The pin connected to the LED as a list.
 
