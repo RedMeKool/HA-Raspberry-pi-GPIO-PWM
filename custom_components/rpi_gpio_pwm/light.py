@@ -106,6 +106,7 @@ class PwmSimpleLed(LightEntity, RestoreEntity):
 
     @property
     def unique_id(self):
+        """Return the unique id."""
         return self._unique_id
 
     @property
