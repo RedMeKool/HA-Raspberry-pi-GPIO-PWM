@@ -15,7 +15,7 @@ from homeassistant.components.light import (
     SUPPORT_TRANSITION,
     LightEntity,
 )
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON, CONF_UNIQUE_ID
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -46,6 +46,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                     vol.Optional(CONF_FREQUENCY): cv.positive_int,
                     vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
                     vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
+                    vol.Optional(CONF_UNIQUE_ID): cv.string,
                 }
             ],
         )
@@ -67,7 +68,7 @@ def setup_platform(
         if CONF_FREQUENCY in led_conf:
             opt_args["frequency"] = led_conf[CONF_FREQUENCY]
         opt_args["pin_factory"] = PiGPIOFactory(host=led_conf[CONF_HOST], port= led_conf[CONF_PORT])
-        led = PwmSimpleLed(PWMLED(pin, **opt_args), led_conf[CONF_NAME])
+        led = PwmSimpleLed(PWMLED(pin, **opt_args), led_conf[CONF_NAME], led_conf[CONF_UNIQUE_ID])
         leds.append(led)
 
     add_entities(leds)
@@ -76,10 +77,11 @@ def setup_platform(
 class PwmSimpleLed(LightEntity, RestoreEntity):
     """Representation of a simple one-color PWM LED."""
 
-    def __init__(self, led, name):
+    def __init__(self, led, name, unique_id):
         """Initialize one-color PWM LED."""
         self._led = led
         self._name = name
+        self._unique_id = unique_id
         self._is_on = False
         self._brightness = DEFAULT_BRIGHTNESS
 
