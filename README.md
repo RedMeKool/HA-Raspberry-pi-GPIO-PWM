@@ -34,7 +34,7 @@ light:
 
 - **name** string *(REQUIRED)*: The name of the LED.
 
-- **unique_id** string *(REQUIRED)*: An ID that uniquely identifies this LED. Set this to a unique value to allow customization through the UI.
+- **unique_id** string *(optional)*: An ID that uniquely identifies this LED. Set this to a unique value to allow customization through the UI.
 
 - **pin** integer *(REQUIRED)*: The pin connected to the LED as a list.
 
