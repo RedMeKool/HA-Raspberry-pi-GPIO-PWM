@@ -122,9 +122,9 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         """Flag supported features."""
         return SUPPORT_SIMPLE_FAN
 
-    def turn_on(self, percentage: Optional[int] = None, preset_mode: Optional[str] = None, **kwargs: Any) -> None:
+    def turn_on(self, percentage: None, preset_mode: None, **kwargs) -> None:
         """Turn on the fan."""
-        if percentage != None:
+        if percentage is not None:
             self._percentage = percentage
         elif ATTR_PERCENTAGE in kwargs:
             self._percentage = kwargs[ATTR_PERCENTAGE]
@@ -132,7 +132,7 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         self._is_on = True
         self.schedule_update_ha_state()
 
-    def turn_off(self, **kwargs: Any) -> None:
+    def turn_off(self, **kwargs) -> None:
         """Turn the fan off."""
         if self.is_on:
             self._fan.off()
