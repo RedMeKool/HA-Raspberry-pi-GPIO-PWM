@@ -12,8 +12,8 @@ from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     PLATFORM_SCHEMA,
     SUPPORT_BRIGHTNESS,
-    SUPPORT_TRANSITION,
     LightEntity,
+    LightEntityFeature,
 )
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON, CONF_UNIQUE_ID
 from homeassistant.core import HomeAssistant
@@ -33,7 +33,7 @@ DEFAULT_BRIGHTNESS = 255
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 8888
 
-SUPPORT_SIMPLE_LED = SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
+SUPPORT_SIMPLE_LED = SUPPORT_BRIGHTNESS | LightEntityFeature.TRANSITION
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
