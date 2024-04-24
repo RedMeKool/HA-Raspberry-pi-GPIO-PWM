@@ -1,11 +1,11 @@
 """Support for Fan that can be controlled using PWM."""
+
 from __future__ import annotations
 
 import logging
 
 from gpiozero import PWMOutputDevice
 from gpiozero.pins.pigpio import PiGPIOFactory
-
 import voluptuous as vol
 
 from homeassistant.components.fan import (
@@ -14,22 +14,28 @@ from homeassistant.components.fan import (
     FanEntityFeature,
     FanEntity,
 )
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON, CONF_UNIQUE_ID
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    CONF_UNIQUE_ID,
+    STATE_ON,
+)
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
+from .const import (
+    CONF_FANS,
+    CONF_PIN,
+    DEFAULT_FAN_PERCENTAGE,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+)
+
 _LOGGER = logging.getLogger(__name__)
-
-CONF_FANS = "fans"
-CONF_PIN = "pin"
-
-DEFAULT_PERCENTAGE = 100
-
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8888
 
 SUPPORT_SIMPLE_FAN = FanEntityFeature.SET_SPEED
 
@@ -81,7 +87,7 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         self._name = name
         self._unique_id = unique_id
         self._is_on = False
-        self._percentage = DEFAULT_PERCENTAGE
+        self._percentage = DEFAULT_FAN_PERCENTAGE
 
     async def async_added_to_hass(self):
         """Handle entity about to be added to hass event."""
@@ -89,7 +95,7 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         if last_state := await self.async_get_last_state():
             self._is_on = last_state.state == STATE_ON
             self._percentage = last_state.attributes.get(
-                "percentage", DEFAULT_PERCENTAGE
+                "percentage", DEFAULT_FAN_PERCENTAGE
             )
 
     @property
@@ -145,3 +151,4 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         self._fan.value = self._percentage / 100
         self._is_on = True
         self.schedule_update_ha_state()
+

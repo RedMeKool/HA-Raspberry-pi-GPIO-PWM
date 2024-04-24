@@ -1,11 +1,11 @@
 """Support for LED lights that can be controlled using PWM."""
+
 from __future__ import annotations
 
 import logging
 
 from gpiozero import PWMLED
 from gpiozero.pins.pigpio import PiGPIOFactory
-
 import voluptuous as vol
 
 from homeassistant.components.light import (
@@ -15,23 +15,29 @@ from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
 )
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON, CONF_UNIQUE_ID
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    CONF_UNIQUE_ID,
+    STATE_ON,
+)
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
+from .const import (
+    CONF_FREQUENCY,
+    CONF_LEDS,
+    CONF_PIN,
+    DEFAULT_BRIGHTNESS,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+)
+
 _LOGGER = logging.getLogger(__name__)
-
-CONF_LEDS = "leds"
-CONF_PIN = "pin"
-CONF_FREQUENCY = "frequency"
-
-DEFAULT_BRIGHTNESS = 255
-
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8888
 
 SUPPORT_SIMPLE_LED = LightEntityFeature.TRANSITION
 COLORMODE = ColorMode.BRIGHTNESS
@@ -156,3 +162,4 @@ class PwmSimpleLed(LightEntity, RestoreEntity):
 def _from_hass_brightness(brightness):
     """Convert Home Assistant brightness units to percentage."""
     return brightness / 255
+
