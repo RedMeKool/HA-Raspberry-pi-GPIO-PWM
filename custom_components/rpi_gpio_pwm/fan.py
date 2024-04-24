@@ -11,9 +11,10 @@ import voluptuous as vol
 from homeassistant.components.fan import (
     ATTR_PERCENTAGE,
     PLATFORM_SCHEMA,
-    FanEntityFeature,
     FanEntity,
+    FanEntityFeature,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -28,6 +29,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import (
+    CONF_FAN,
     CONF_FANS,
     CONF_PIN,
     DEFAULT_FAN_PERCENTAGE,
@@ -68,7 +70,9 @@ def setup_platform(
     for fan_conf in config[CONF_FANS]:
         pin = fan_conf[CONF_PIN]
         opt_args = {}
-        opt_args["pin_factory"] = PiGPIOFactory(host=fan_conf[CONF_HOST], port= fan_conf[CONF_PORT])
+        opt_args["pin_factory"] = PiGPIOFactory(
+            host=fan_conf[CONF_HOST], port=fan_conf[CONF_PORT]
+        )
         fan = PwmSimpleFan(
             fan=PWMOutputDevice(pin, **opt_args),
             name=fan_conf[CONF_NAME],
@@ -80,16 +84,48 @@ def setup_platform(
     add_entities(fans)
 
 
+# Transform the configEntry from config_flow into an entity
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+):
+    """Set up fan from the ConfigEntry configuration created in the integrations UI."""
+    pin = config_entry.data.get(CONF_PIN)
+    opt_args = {}
+    opt_args["pin_factory"] = PiGPIOFactory(
+        host=config_entry.data.get(CONF_HOST), port=config_entry.data.get(CONF_PORT)
+    )
+    entity1 = PwmSimpleFan(
+        fan=PWMOutputDevice(pin, **opt_args),
+        hass=hass,
+        config_entry=config_entry,
+    )
+    # Do not create entity if is not a fan
+    if CONF_FAN not in config_entry.title:
+        pass
+    else:
+        async_add_entities([entity1], update_before_add=True)
+
+
 class PwmSimpleFan(FanEntity, RestoreEntity):
     """Representation of a simple PWM FAN."""
 
-    def __init__(self, fan, name, unique_id, hass):
+    def __init__(self, **kwarg):
         """Initialize PWM FAN."""
-        self._hass = hass
+        self._hass = kwarg["hass"]
         self._attr_has_entity_name = True
-        self._fan = fan
-        self._name = name
-        self._unique_id = unique_id
+        self._fan = kwarg["fan"]
+        self._name = (
+            kwarg["config_entry"].data.get(CONF_NAME)
+            if "config_entry" in kwarg
+            else kwarg["name"]
+        )
+        self._unique_id = (
+            kwarg["config_entry"].entry_id
+            if "config_entry" in kwarg
+            else kwarg["unique_id"]
+        )
         self._is_on = False
         self._percentage = DEFAULT_FAN_PERCENTAGE
 
@@ -155,4 +191,3 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         self._fan.value = self._percentage / 100
         self._is_on = True
         self.schedule_update_ha_state()
-

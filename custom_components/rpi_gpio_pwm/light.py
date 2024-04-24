@@ -15,6 +15,7 @@ from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -31,6 +32,7 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from .const import (
     CONF_FREQUENCY,
     CONF_LEDS,
+    CONF_LIGHT,
     CONF_PIN,
     DEFAULT_BRIGHTNESS,
     DEFAULT_HOST,
@@ -74,7 +76,9 @@ def setup_platform(
         opt_args = {}
         if CONF_FREQUENCY in led_conf:
             opt_args["frequency"] = led_conf[CONF_FREQUENCY]
-        opt_args["pin_factory"] = PiGPIOFactory(host=led_conf[CONF_HOST], port= led_conf[CONF_PORT])
+        opt_args["pin_factory"] = PiGPIOFactory(
+            host=led_conf[CONF_HOST], port=led_conf[CONF_PORT]
+        )
         led = PwmSimpleLed(
             led=PWMLED(pin, **opt_args),
             name=led_conf[CONF_NAME],
@@ -86,16 +90,49 @@ def setup_platform(
     add_entities(leds)
 
 
+# Transform the configEntry from config_flow into an entity
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+):
+    """Set up light from the ConfigEntry configuration created in the integrations UI."""
+    pin = config_entry.data.get(CONF_PIN)
+    opt_args = {}
+    opt_args["frequency"] = config_entry.data.get(CONF_FREQUENCY)
+    opt_args["pin_factory"] = PiGPIOFactory(
+        host=config_entry.data.get(CONF_HOST), port=config_entry.data.get(CONF_PORT)
+    )
+    entity1 = PwmSimpleLed(
+        led=PWMLED(pin, **opt_args),
+        hass=hass,
+        config_entry=config_entry,
+    )
+    # Do not create entity if is not a light
+    if CONF_LIGHT not in config_entry.title:
+        pass
+    else:
+        async_add_entities([entity1], update_before_add=True)
+
+
 class PwmSimpleLed(LightEntity, RestoreEntity):
     """Representation of a simple one-color PWM LED."""
 
-    def __init__(self, led, name, unique_id, hass):
+    def __init__(self, **kwarg) -> None:
         """Initialize one-color PWM LED."""
-        self._hass = hass
+        self._hass = kwarg["hass"]
         self._attr_has_entity_name = True
-        self._led = led
-        self._name = name
-        self._unique_id = unique_id
+        self._led = kwarg["led"]
+        self._name = (
+            kwarg["config_entry"].data.get(CONF_NAME)
+            if "config_entry" in kwarg
+            else kwarg["name"]
+        )
+        self._unique_id = (
+            kwarg["config_entry"].entry_id
+            if "config_entry" in kwarg
+            else kwarg["unique_id"]
+        )
         self._is_on = False
         self._brightness = DEFAULT_BRIGHTNESS
 
@@ -163,7 +200,7 @@ class PwmSimpleLed(LightEntity, RestoreEntity):
         self._is_on = False
         self.schedule_update_ha_state()
 
+
 def _from_hass_brightness(brightness):
     """Convert Home Assistant brightness units to percentage."""
     return brightness / 255
-
