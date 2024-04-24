@@ -72,7 +72,8 @@ def setup_platform(
         fan = PwmSimpleFan(
             fan=PWMOutputDevice(pin, **opt_args),
             name=fan_conf[CONF_NAME],
-            unique_id=fan_conf[CONF_UNIQUE_ID]
+            unique_id=fan_conf[CONF_UNIQUE_ID],
+            hass=hass,
         )
         fans.append(fan)
 
@@ -82,8 +83,10 @@ def setup_platform(
 class PwmSimpleFan(FanEntity, RestoreEntity):
     """Representation of a simple PWM FAN."""
 
-    def __init__(self, fan, name, unique_id):
+    def __init__(self, fan, name, unique_id, hass):
         """Initialize PWM FAN."""
+        self._hass = hass
+        self._attr_has_entity_name = True
         self._fan = fan
         self._name = name
         self._unique_id = unique_id

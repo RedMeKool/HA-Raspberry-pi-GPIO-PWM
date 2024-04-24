@@ -78,7 +78,8 @@ def setup_platform(
         led = PwmSimpleLed(
             led=PWMLED(pin, **opt_args),
             name=led_conf[CONF_NAME],
-            unique_id=led_conf[CONF_UNIQUE_ID]
+            unique_id=led_conf[CONF_UNIQUE_ID],
+            hass=hass,
         )
         leds.append(led)
 
@@ -88,8 +89,10 @@ def setup_platform(
 class PwmSimpleLed(LightEntity, RestoreEntity):
     """Representation of a simple one-color PWM LED."""
 
-    def __init__(self, led, name, unique_id):
+    def __init__(self, led, name, unique_id, hass):
         """Initialize one-color PWM LED."""
+        self._hass = hass
+        self._attr_has_entity_name = True
         self._led = led
         self._name = name
         self._unique_id = unique_id
