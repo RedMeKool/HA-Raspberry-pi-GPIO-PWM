@@ -47,7 +47,7 @@ fan:
 
 - **pin** integer *(REQUIRED)*: The pin connected to the LED as a list for light config or the pin connected to the FAN for fan config..
 
-- **unique_id** string *(optional)*: An ID that uniquely identifies this LED or FAN. Set this to a unique value to allow customization through the UI.
+- **unique_id** string *(REQUIRED)*: An ID that uniquely identifies this LED or FAN. Set this to a unique value to allow customization through the UI.
 
 - **frequency** integer *(optional, default: 100)*: The PWM frequency for light config.
 

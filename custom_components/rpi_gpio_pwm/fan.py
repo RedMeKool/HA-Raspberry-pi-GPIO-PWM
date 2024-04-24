@@ -69,10 +69,11 @@ def setup_platform(
         pin = fan_conf[CONF_PIN]
         opt_args = {}
         opt_args["pin_factory"] = PiGPIOFactory(host=fan_conf[CONF_HOST], port= fan_conf[CONF_PORT])
-        if CONF_UNIQUE_ID in fan_conf:
-            fan = PwmSimpleFan(PWMOutputDevice(pin, **opt_args), fan_conf[CONF_NAME], fan_conf[CONF_UNIQUE_ID])
-        else:
-            fan = PwmSimpleFan(PWMOutputDevice(pin, **opt_args), fan_conf[CONF_NAME])
+        fan = PwmSimpleFan(
+            fan=PWMOutputDevice(pin, **opt_args),
+            name=fan_conf[CONF_NAME],
+            unique_id=fan_conf[CONF_UNIQUE_ID]
+        )
         fans.append(fan)
 
     add_entities(fans)
