@@ -95,7 +95,7 @@ async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-):
+) -> None:
     """Set up light from the ConfigEntry configuration created in the integrations UI."""
     pin = config_entry.data.get(CONF_PIN)
     opt_args = {}

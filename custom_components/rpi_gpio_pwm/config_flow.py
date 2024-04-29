@@ -7,7 +7,7 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import (
     CONF_ENTITY_ID,
     CONF_HOST,
@@ -157,14 +157,14 @@ class GPIOPWMConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
     MINOR_VERSION = 1
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input=None) -> ConfigFlowResult:
         """Invoke when a user initiates a flow via the user interface."""
         return self.async_show_menu(
             step_id="user",
             menu_options=["light", "fan"],
         )
 
-    async def async_step_light(self, user_input: dict | None = None) -> FlowResult:
+    async def async_step_light(self, user_input: dict | None = None) -> ConfigFlowResult:
         """Invoke when a user initiates a flow via the user interface."""
         errors: dict[str, str] = {}
 
@@ -193,7 +193,7 @@ class GPIOPWMConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="light", data_schema=DATA_SCHEMA_ConfigFlowLight, errors=errors
         )
 
-    async def async_step_fan(self, user_input: dict | None = None) -> FlowResult:
+    async def async_step_fan(self, user_input: dict | None = None) -> ConfigFlowResult:
         """Invoke when a user initiates a flow via the user interface."""
         errors: dict[str, str] = {}
 
@@ -225,7 +225,7 @@ class GPIOPWMConfigFlow(ConfigFlow, domain=DOMAIN):
     # Declare optionFlow
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: ConfigEntry):
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Get options flow for this handler."""
         return GPIOPWMOptionsFlow(config_entry)
 
