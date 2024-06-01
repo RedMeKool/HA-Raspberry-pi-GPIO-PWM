@@ -11,9 +11,9 @@ import voluptuous as vol
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     PLATFORM_SCHEMA,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_TRANSITION,
+    ColorMode,
     LightEntity,
+    LightEntityFeature,
 )
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON, CONF_UNIQUE_ID
 from homeassistant.core import HomeAssistant
@@ -33,7 +33,8 @@ DEFAULT_BRIGHTNESS = 255
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 8888
 
-SUPPORT_SIMPLE_LED = SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
+SUPPORT_SIMPLE_LED = LightEntityFeature.TRANSITION
+COLORMODE = ColorMode.BRIGHTNESS
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -121,6 +122,16 @@ class PwmSimpleLed(LightEntity, RestoreEntity):
     def brightness(self):
         """Return the brightness property."""
         return self._brightness
+
+    @property
+    def supported_color_modes(self):
+        """Return the flag supported_color_modes property."""
+        return {COLORMODE}
+
+    @property
+    def color_mode(self):
+        """Return the color_mode property."""
+        return COLORMODE
 
     @property
     def supported_features(self):
