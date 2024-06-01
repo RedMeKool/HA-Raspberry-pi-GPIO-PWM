@@ -1,11 +1,11 @@
 """Support for LED lights that can be controlled using PWM."""
+
 from __future__ import annotations
 
 import logging
 
 from gpiozero import PWMLED
 from gpiozero.pins.pigpio import PiGPIOFactory
-
 import voluptuous as vol
 
 from homeassistant.components.light import (
@@ -15,23 +15,31 @@ from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
 )
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON, CONF_UNIQUE_ID
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    CONF_UNIQUE_ID,
+    STATE_ON,
+)
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
+from .const import (
+    CONF_FREQUENCY,
+    CONF_LEDS,
+    CONF_LIGHT,
+    CONF_PIN,
+    DEFAULT_BRIGHTNESS,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+)
+
 _LOGGER = logging.getLogger(__name__)
-
-CONF_LEDS = "leds"
-CONF_PIN = "pin"
-CONF_FREQUENCY = "frequency"
-
-DEFAULT_BRIGHTNESS = 255
-
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8888
 
 SUPPORT_SIMPLE_LED = LightEntityFeature.TRANSITION
 COLORMODE = ColorMode.BRIGHTNESS
@@ -68,24 +76,63 @@ def setup_platform(
         opt_args = {}
         if CONF_FREQUENCY in led_conf:
             opt_args["frequency"] = led_conf[CONF_FREQUENCY]
-        opt_args["pin_factory"] = PiGPIOFactory(host=led_conf[CONF_HOST], port= led_conf[CONF_PORT])
-        if CONF_UNIQUE_ID in led_conf:
-            led = PwmSimpleLed(PWMLED(pin, **opt_args), led_conf[CONF_NAME], led_conf[CONF_UNIQUE_ID])
-        else:
-            led = PwmSimpleLed(PWMLED(pin, **opt_args), led_conf[CONF_NAME])
+        opt_args["pin_factory"] = PiGPIOFactory(
+            host=led_conf[CONF_HOST], port=led_conf[CONF_PORT]
+        )
+        led = PwmSimpleLed(
+            led=PWMLED(pin, **opt_args),
+            name=led_conf[CONF_NAME],
+            unique_id=led_conf[CONF_UNIQUE_ID],
+            hass=hass,
+        )
         leds.append(led)
 
     add_entities(leds)
 
 
+# Transform the configEntry from config_flow into an entity
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up light from the ConfigEntry configuration created in the integrations UI."""
+    pin = config_entry.data.get(CONF_PIN)
+    opt_args = {}
+    opt_args["frequency"] = config_entry.data.get(CONF_FREQUENCY)
+    opt_args["pin_factory"] = PiGPIOFactory(
+        host=config_entry.data.get(CONF_HOST), port=config_entry.data.get(CONF_PORT)
+    )
+    entity1 = PwmSimpleLed(
+        led=PWMLED(pin, **opt_args),
+        hass=hass,
+        config_entry=config_entry,
+    )
+    # Do not create entity if is not a light
+    if CONF_LIGHT not in config_entry.title:
+        pass
+    else:
+        async_add_entities([entity1], update_before_add=True)
+
+
 class PwmSimpleLed(LightEntity, RestoreEntity):
     """Representation of a simple one-color PWM LED."""
 
-    def __init__(self, led, name, unique_id):
+    def __init__(self, **kwarg) -> None:
         """Initialize one-color PWM LED."""
-        self._led = led
-        self._name = name
-        self._unique_id = unique_id
+        self._hass = kwarg["hass"]
+        self._attr_has_entity_name = True
+        self._led = kwarg["led"]
+        self._name = (
+            kwarg["config_entry"].data.get(CONF_NAME)
+            if "config_entry" in kwarg
+            else kwarg["name"]
+        )
+        self._unique_id = (
+            kwarg["config_entry"].entry_id
+            if "config_entry" in kwarg
+            else kwarg["unique_id"]
+        )
         self._is_on = False
         self._brightness = DEFAULT_BRIGHTNESS
 
@@ -152,6 +199,7 @@ class PwmSimpleLed(LightEntity, RestoreEntity):
             self._led.off()
         self._is_on = False
         self.schedule_update_ha_state()
+
 
 def _from_hass_brightness(brightness):
     """Convert Home Assistant brightness units to percentage."""

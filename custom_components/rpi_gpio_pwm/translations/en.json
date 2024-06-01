@@ -1,0 +1,83 @@
+
+{
+    "title": "RPI GPIO PWM",
+    "config": {
+        "flow_title": "Rpi_GPIO_PWM configuration",
+        "error": {
+            "pin_used": "The selected pin is already in use."
+        },
+        "step": {
+            "user": {
+               "menu_options": {
+                    "light": "Configure a light",
+                    "fan": "Configure a fan"
+                }
+            },
+            "light": {
+              "title": "Configuration of a light",
+              "description": "Configuration panel for a light throuth GPIO",
+              "data": {
+                  "name": "Name",
+                  "pin": "PIN",
+                  "host": "Host",
+                  "port": "Port",
+                  "frequency": "Frequency"
+              },
+              "data_description": {
+                  "name": "Name for your light",
+                  "pin": "The pin connected to the LED",
+                  "host": "The remote host address for the GPIO driver",
+                  "port": "The port on which the GPIO driver is listening",
+                  "frequency": "The PWM frequency for light config"
+              }
+            },
+            "fan": {
+                "title": "Configuration of a Fan",
+                "description": "Configuration panel for a fan throuth GPIO",
+                "data": {
+                    "name": "Name",
+                    "pin": "PIN",
+                    "host": "Host",
+                    "port": "Port"
+                },
+                "data_description": {
+                    "name": "Name for your fan",
+                    "pin": "The pin connected to the FAN",
+                    "host": "The remote host address for the GPIO driver",
+                    "port": "The port on which the GPIO driver is listening"
+                }
+            }
+        }
+    },
+    "options": {
+      "flow_title": "Rpi_GPIO_PWM RE-configuration",
+      "error": {
+          "pin_used": "The selected pin is already in use.",
+          "fan_bad_EntityID_format": "Bad Entity_ID format. Please format like 'fan.name_you_want'",
+          "light_bad_EntityID_format": "Bad Entity_ID format. Please format like 'light.name_you_want'"
+      },
+      "step": {
+          "init": {
+              "title": "RE-Configuration of a device",
+              "description": "Configuration panel for a device throuth GPIO",
+              "data": {
+                  "name": "Name",
+                  "entity_id": "Entity ID",
+                  "pin": "PIN",
+                  "host": "Host",
+                  "port": "Port",
+                  "frequency": "Frequency"
+              },
+              "data_description": {
+                  "name": "Name for your device",
+                  "entity_id": "Entity ID for your device",
+                  "pin": "The pin connected to the device",
+                  "host": "The remote host address for the GPIO driver",
+                  "port": "The port on which the GPIO driver is listening",
+                  "frequency": "The PWM frequency for light config"
+              }
+          }
+      }
+    }
+  }
+  

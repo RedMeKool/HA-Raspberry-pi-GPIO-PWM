@@ -2,6 +2,7 @@
   "domain": "rpi_gpio_pwm",
   "name": "Raspberry Pi GPIO PWM",
   "codeowners": ["@regevbr", "@antonverburg"],
+  "config_flow": true,
   "documentation": "https://github.com/RedMeKool/HA-Raspberry-pi-GPIO-PWM",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/RedMeKool/HA-Raspberry-pi-GPIO-PWM/issues",

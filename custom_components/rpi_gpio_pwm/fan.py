@@ -1,35 +1,43 @@
 """Support for Fan that can be controlled using PWM."""
+
 from __future__ import annotations
 
 import logging
 
 from gpiozero import PWMOutputDevice
 from gpiozero.pins.pigpio import PiGPIOFactory
-
 import voluptuous as vol
 
 from homeassistant.components.fan import (
     ATTR_PERCENTAGE,
     PLATFORM_SCHEMA,
-    FanEntityFeature,
     FanEntity,
+    FanEntityFeature,
 )
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME, STATE_ON, CONF_UNIQUE_ID
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    CONF_UNIQUE_ID,
+    STATE_ON,
+)
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
+from .const import (
+    CONF_FAN,
+    CONF_FANS,
+    CONF_PIN,
+    DEFAULT_FAN_PERCENTAGE,
+    DEFAULT_HOST,
+    DEFAULT_PORT,
+)
+
 _LOGGER = logging.getLogger(__name__)
-
-CONF_FANS = "fans"
-CONF_PIN = "pin"
-
-DEFAULT_PERCENTAGE = 100
-
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8888
 
 SUPPORT_SIMPLE_FAN = FanEntityFeature.SET_SPEED
 
@@ -62,26 +70,64 @@ def setup_platform(
     for fan_conf in config[CONF_FANS]:
         pin = fan_conf[CONF_PIN]
         opt_args = {}
-        opt_args["pin_factory"] = PiGPIOFactory(host=fan_conf[CONF_HOST], port= fan_conf[CONF_PORT])
-        if CONF_UNIQUE_ID in fan_conf:
-            fan = PwmSimpleFan(PWMOutputDevice(pin, **opt_args), fan_conf[CONF_NAME], fan_conf[CONF_UNIQUE_ID])
-        else:
-            fan = PwmSimpleFan(PWMOutputDevice(pin, **opt_args), fan_conf[CONF_NAME])
+        opt_args["pin_factory"] = PiGPIOFactory(
+            host=fan_conf[CONF_HOST], port=fan_conf[CONF_PORT]
+        )
+        fan = PwmSimpleFan(
+            fan=PWMOutputDevice(pin, **opt_args),
+            name=fan_conf[CONF_NAME],
+            unique_id=fan_conf[CONF_UNIQUE_ID],
+            hass=hass,
+        )
         fans.append(fan)
 
     add_entities(fans)
 
 
+# Transform the configEntry from config_flow into an entity
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up fan from the ConfigEntry configuration created in the integrations UI."""
+    pin = config_entry.data.get(CONF_PIN)
+    opt_args = {}
+    opt_args["pin_factory"] = PiGPIOFactory(
+        host=config_entry.data.get(CONF_HOST), port=config_entry.data.get(CONF_PORT)
+    )
+    entity1 = PwmSimpleFan(
+        fan=PWMOutputDevice(pin, **opt_args),
+        hass=hass,
+        config_entry=config_entry,
+    )
+    # Do not create entity if is not a fan
+    if CONF_FAN not in config_entry.title:
+        pass
+    else:
+        async_add_entities([entity1], update_before_add=True)
+
+
 class PwmSimpleFan(FanEntity, RestoreEntity):
     """Representation of a simple PWM FAN."""
 
-    def __init__(self, fan, name, unique_id):
+    def __init__(self, **kwarg):
         """Initialize PWM FAN."""
-        self._fan = fan
-        self._name = name
-        self._unique_id = unique_id
+        self._hass = kwarg["hass"]
+        self._attr_has_entity_name = True
+        self._fan = kwarg["fan"]
+        self._name = (
+            kwarg["config_entry"].data.get(CONF_NAME)
+            if "config_entry" in kwarg
+            else kwarg["name"]
+        )
+        self._unique_id = (
+            kwarg["config_entry"].entry_id
+            if "config_entry" in kwarg
+            else kwarg["unique_id"]
+        )
         self._is_on = False
-        self._percentage = DEFAULT_PERCENTAGE
+        self._percentage = DEFAULT_FAN_PERCENTAGE
 
     async def async_added_to_hass(self):
         """Handle entity about to be added to hass event."""
@@ -89,7 +135,7 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         if last_state := await self.async_get_last_state():
             self._is_on = last_state.state == STATE_ON
             self._percentage = last_state.attributes.get(
-                "percentage", DEFAULT_PERCENTAGE
+                "percentage", DEFAULT_FAN_PERCENTAGE
             )
 
     @property
