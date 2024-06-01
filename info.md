@@ -11,11 +11,11 @@ For Home Assistant this daemon can be installed as an add-on (https://github.com
 
 ### HACS
 
-The recommend way to install `ha-rpi_gpio_pwm` is through [HACS](https://hacs.xyz/).
+The recommend way to install `rpi_gpio_pwm` is through [HACS](https://hacs.xyz/).
 
 ### Manual installation
 
-Copy the `ha-rpi_gpio_pwm` folder and all of its contents into your Home Assistant's `custom_components` folder. This folder is usually inside your `/config` folder. If you are running Hass.io, use SAMBA to copy the folder over. You may need to create the `custom_components` folder and then copy the `ha-rpi_gpio_pwm` folder and all of its contents into it.
+Copy the `rpi_gpio_pwm` folder and all of its contents into your Home Assistant's `custom_components` folder. This folder is usually inside your `/config` folder. If you are running Hass.io, use SAMBA to copy the folder over. You may need to create the `custom_components` folder and then copy the `rpi_gpio_pwm` folder and all of its contents into it.
 
 # Configuration
 To enable this platform, add the following lines to your configuration.yaml:
