@@ -8,5 +8,5 @@
   "issue_tracker": "https://github.com/RedMeKool/HA-Raspberry-pi-GPIO-PWM/issues",
   "loggers": ["gpiozero", "pigpio"],
   "requirements": ["gpiozero==1.6.2", "pigpio==1.78"],
-  "version": "2024.3.3"
+  "version": "2024.5.5"
 }
