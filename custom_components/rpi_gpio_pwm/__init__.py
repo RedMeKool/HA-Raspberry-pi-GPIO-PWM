@@ -3,7 +3,7 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, PLATFORMS
+from .const import DOMAIN, PLATFORMS, PLATFORMS_FAN, PLATFORMS_LIGHT
 
 
 # Transform the configEntry from config_flow into an entity
@@ -23,7 +23,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Propagates the configEntry to all platforms declared in the integration
     # This creates each HA object for each platform your device requires.
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    if hass_data["platform"] == "fan":
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_FAN)
+    if hass_data["platform"] == "light":
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_LIGHT)
 
     return True
 
