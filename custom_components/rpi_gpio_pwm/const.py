@@ -22,3 +22,9 @@ PLATFORMS: list[Platform] = [
     Platform.FAN,
     Platform.LIGHT,
 ]
+PLATFORMS_FAN: list[Platform] = [
+    Platform.FAN,
+]
+PLATFORMS_LIGHT: list[Platform] = [
+    Platform.LIGHT,
+]
