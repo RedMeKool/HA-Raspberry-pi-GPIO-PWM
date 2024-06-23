@@ -2,7 +2,7 @@
   "name": "Raspberry Pi GPIO PWM",
   "filename": "rpi_gpio_pwm.zip",
   "hide_default_branch": true,
-  "homeassistant": "2024.5.5",
+  "homeassistant": "2024.6.0",
   "render_readme": true,
   "zip_release": true
 }
