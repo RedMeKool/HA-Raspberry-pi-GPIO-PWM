@@ -39,7 +39,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SUPPORT_SIMPLE_FAN = FanEntityFeature.SET_SPEED
+SUPPORT_SIMPLE_FAN = (FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -168,7 +168,7 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         """Flag supported features."""
         return SUPPORT_SIMPLE_FAN
 
-    def turn_on(self, percentage: None, preset_mode: None, **kwargs) -> None:
+    def turn_on(self, percentage: Optional[int] = None, preset_mode: Optional[str] = None, **kwargs: Any) -> None:
         """Turn on the fan."""
         if percentage is not None:
             self._percentage = percentage
@@ -178,7 +178,7 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         self._is_on = True
         self.schedule_update_ha_state()
 
-    def turn_off(self, **kwargs) -> None:
+    def turn_off(self, **kwargs: Any) -> None:
         """Turn the fan off."""
         if self.is_on:
             self._fan.off()
