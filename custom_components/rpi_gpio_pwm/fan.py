@@ -39,7 +39,9 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SUPPORT_SIMPLE_FAN = FanEntityFeature.SET_SPEED
+SUPPORT_SIMPLE_FAN = (
+    FanEntityFeature.SET_SPEED | FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -191,3 +193,4 @@ class PwmSimpleFan(FanEntity, RestoreEntity):
         self._fan.value = self._percentage / 100
         self._is_on = True
         self.schedule_update_ha_state()
+
