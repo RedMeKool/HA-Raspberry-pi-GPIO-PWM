@@ -2,12 +2,17 @@
 
 from collections.abc import Mapping
 import copy
-import re
 from typing import Any
+import uuid
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import (
     CONF_ENTITY_ID,
     CONF_HOST,
@@ -15,7 +20,7 @@ from homeassistant.const import (
     CONF_PLATFORM,
     CONF_PORT,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback, valid_entity_id
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import entity_registry as er, selector
 import homeassistant.helpers.config_validation as cv
@@ -83,18 +88,11 @@ DATA_SCHEMA_OptionFlowFan = vol.Schema(
 async def async_check_if_pin_is_used(hass: HomeAssistant, pin: int) -> str | None:
     """Check if pin is free or already use by rpi_gpio_pwm component."""
 
-    # Load all already configured config_entries (in .storage/core.config_entries)
-    config_entries_data = await hass.config_entries._store.async_load()
+    # Load all already configured config_entries for domain rpi_gpio_pwm
+    config_entries_data = hass.config_entries.async_entries(DOMAIN)
 
     # Create a list of pins already in use
-    pin_list = []
-    for i in config_entries_data:
-        if i == "entries":
-            for j in config_entries_data[i]:
-                if j.get("domain") == DOMAIN:
-                    for k in j:
-                        if k == "data":
-                            pin_list.extend([j[k].get(CONF_PIN)])
+    pin_list = [c.data.get(CONF_PIN) for c in config_entries_data]
 
     # Return True if pin is free, else False
     if pin in pin_list:
@@ -114,10 +112,19 @@ async def async_get_entity_id_by_unique_id(
     )
 
 
-async def update_entity_ID(
+async def entity_id_available(hass: HomeAssistant, entity_id: str) -> bool:
+    """Return True if the entity_id is available."""
+
+    entity_registry = er.async_get(hass)
+    return not entity_registry.async_is_registered(
+        entity_id
+    ) and hass.states.async_available(entity_id)
+
+
+async def update_entity_id(
     hass: HomeAssistant, entity_id_OLD: str, entity_id_NEW: str
 ) -> None:
-    """Update entity if change in Config Flow.."""
+    """Update entity if change in Config Flow."""
     entity_registry = er.async_get(hass)
     entity_registry.async_update_entity(
         entity_id=entity_id_OLD,
@@ -164,7 +171,9 @@ class GPIOPWMConfigFlow(ConfigFlow, domain=DOMAIN):
             menu_options=["light", "fan"],
         )
 
-    async def async_step_light(self, user_input: dict | None = None) -> ConfigFlowResult:
+    async def async_step_light(
+        self, user_input: dict | None = None
+    ) -> ConfigFlowResult:
         """Invoke when a user initiates a flow via the user interface."""
         errors: dict[str, str] = {}
 
@@ -180,6 +189,12 @@ class GPIOPWMConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             if pin_is_free is False:
                 errors[CONF_PIN] = "pin_used"
+
+            # Assign a unique ID to the flow and abort the flow
+            # if another flow with the same unique ID is in progress
+            await self.async_set_unique_id(str(uuid.uuid4()))
+            # Abort the flow if a config entry with the same unique ID exists
+            self._abort_if_unique_id_configured()
 
             if not errors:
                 # Create the entity
@@ -209,6 +224,12 @@ class GPIOPWMConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             if pin_is_free is False:
                 errors[CONF_PIN] = "pin_used"
+
+            # Assign a unique ID to the flow and abort the flow
+            # if another flow with the same unique ID is in progress
+            await self.async_set_unique_id(str(uuid.uuid4()))
+            # Abort the flow if a config entry with the same unique ID exists
+            self._abort_if_unique_id_configured()
 
             if not errors:
                 # Create the entity
@@ -247,10 +268,7 @@ class GPIOPWMOptionsFlow(OptionsFlow):
         errors: dict[str, str] = {}
 
         # Stock OLD entity_id and add it to data for show it in config suggested_values in case it need to change
-        if self.config_entry.data[CONF_PLATFORM] == CONF_LIGHT:
-            PLATFORM = CONF_LIGHT
-        elif self.config_entry.data[CONF_PLATFORM] == CONF_FAN:
-            PLATFORM = CONF_FAN
+        PLATFORM = self.data[CONF_PLATFORM]
         entity_id_old = await async_get_entity_id_by_unique_id(
             hass=self.hass,
             PlatForm=PLATFORM,
@@ -273,22 +291,29 @@ class GPIOPWMOptionsFlow(OptionsFlow):
                 if pin_is_free is False:
                     errors[CONF_PIN] = "pin_used"
 
+            self.data[CONF_ENTITY_ID] = (
+                self.data[CONF_PLATFORM] + "." + self.data[CONF_ENTITY_ID]
+            )
             # Check format for Entity_ID
-            if self.config_entry.data[CONF_PLATFORM] == CONF_LIGHT:
-                if re.match(r"^[_A-Za-z0-9]+$", self.data[CONF_ENTITY_ID]) is None:
-                    errors[CONF_ENTITY_ID] = "light_bad_EntityID_format"
-                self.data[CONF_ENTITY_ID] = "light." + self.data[CONF_ENTITY_ID]
-            elif self.config_entry.data[CONF_PLATFORM] == CONF_FAN:
-                if re.match(r"^[_A-Za-z0-9]+$", self.data[CONF_ENTITY_ID]) is None:
-                    errors[CONF_ENTITY_ID] = "fan_bad_EntityID_format"
-                self.data[CONF_ENTITY_ID] = "fan." + self.data[CONF_ENTITY_ID]
+            if valid_entity_id(self.data[CONF_ENTITY_ID]) is False:
+                errors[CONF_ENTITY_ID] = "bad_EntityID_format"
+            # Check if Entity_ID is already registered
+            if (
+                await entity_id_available(
+                    hass=self.hass, entity_id=self.data[CONF_ENTITY_ID]
+                )
+                is False
+            ):
+                errors[CONF_ENTITY_ID] = "EntityID_already_registered"
 
             if not errors:
                 # Update the entity
-                if self.config_entry.data[CONF_PLATFORM] == CONF_LIGHT:
-                    TITLE = "GPIO " + str(self.data[CONF_PIN]) + " PWM " + CONF_LIGHT
-                elif self.config_entry.data[CONF_PLATFORM] == CONF_FAN:
-                    TITLE = "GPIO " + str(self.data[CONF_PIN]) + " PWM " + CONF_FAN
+                TITLE = (
+                    "GPIO "
+                    + str(self.data[CONF_PIN])
+                    + " PWM "
+                    + self.data[CONF_PLATFORM]
+                )
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     title=TITLE,
@@ -299,7 +324,7 @@ class GPIOPWMOptionsFlow(OptionsFlow):
 
                 # Updates the entity_id if it changes
                 if entity_id_old != self.data[CONF_ENTITY_ID]:
-                    await update_entity_ID(
+                    await update_entity_id(
                         hass=self.hass,
                         entity_id_OLD=entity_id_old,
                         entity_id_NEW=self.data[CONF_ENTITY_ID],

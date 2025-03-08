@@ -48,5 +48,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry_data = hass.data[DOMAIN].pop(entry.entry_id)
         # Remove options_update_listener.
         entry_data["unsub_options_update_listener"]()
+    if not hass.config_entries.async_loaded_entries(DOMAIN):
+        # If this is the last loaded instance of rpi_gpio_pwm, unregister any services
+        # defined during integration setup:
+        for service_name in hass.services.async_services_for_domain(DOMAIN):
+            hass.services.async_remove(DOMAIN, service_name)
 
     return unload_ok

@@ -5,7 +5,7 @@
 The rpi_gpio_pwm platform allows to control multiple lights or fans using pulse-width modulation, for example LED strips. It supports one-color LEDs or fans driven by GPIOs of a Raspberry Pi (same host or remote)
 For controlling the GPIOs, the platform connects to the pigpio-daemon (http://abyz.me.uk/rpi/pigpio/pigpiod.html), which must be running. On Raspbian Jessie 2016-05-10 or newer the pigpio library is already included. On other operating systems it needs to be installed first (see installation instructions: https://github.com/soldag/python-pwmled#installation).
 
-For Home Assistant this daemon can be installed as an add-on (https://github.com/Poeschl/Hassio-Addons/tree/master/pigpio).
+For Home Assistant this daemon can be installed as an add-on (https://github.com/Poeschl-HomeAssistant-Addons/pigpio/tree/main).
 
 # Installation
 

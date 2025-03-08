@@ -6,6 +6,9 @@
         "error": {
             "pin_used": "The selected pin is already in use."
         },
+        "abort": {
+          "already_configured": "Flow aborded because another flow with same Unique ID is already configured"
+        },
         "step": {
             "user": {
                "menu_options": {
@@ -53,8 +56,8 @@
       "flow_title": "Rpi_GPIO_PWM RE-configuration",
       "error": {
           "pin_used": "The selected pin is already in use.",
-          "fan_bad_EntityID_format": "Bad Entity_ID format. Please format like 'fan.name_you_want'",
-          "light_bad_EntityID_format": "Bad Entity_ID format. Please format like 'light.name_you_want'"
+          "bad_EntityID_format": "Bad Entity_ID format. Please format like '[domain].name_you_want'",
+          "EntityID_already_registered": "Entity with this ID is already registered"
       },
       "step": {
           "init": {
